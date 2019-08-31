@@ -10,6 +10,7 @@ public class App : MonoBehaviour {
     }
     private GameObject[] ens = new GameObject[0];
     public GameObject prefab;
+    public float scale = 10f;
     private IEnumerator UpdateWeb(){
         while(enabled){
             var rq = UnityWebRequest.Get("http://localhost:58000");
@@ -32,11 +33,16 @@ public class App : MonoBehaviour {
                 float y = (float) j["Pos"]["Y"];
                 float z = (float) j["Pos"]["Z"];
                 Vector3 pos = new Vector3(x,z,y);
+                pos *= scale;
                 if(ens[i] == null){
                     ens[i] = Instantiate(prefab,pos,Quaternion.identity);
                     ens[i].name = (string)j["Id"];
                 }
                 ens[i].transform.position = pos;
+                foreach(var n in j["Neighbors"]){  
+                    print(i + " " + n);
+                    Debug.DrawLine(pos,ens[(int)n].transform.position,Color.red,0.5f);
+                }
                 i++;
             }
             yield return new WaitForEndOfFrame();
