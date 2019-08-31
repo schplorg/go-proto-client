@@ -40,7 +40,6 @@ public class App : MonoBehaviour {
                 }
                 ens[i].transform.position = pos;
                 foreach(var n in j["Neighbors"]){  
-                    print(i + " " + n);
                     Debug.DrawLine(pos,ens[(int)n].transform.position,Color.red,0.5f);
                 }
                 i++;
