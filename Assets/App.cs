@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json.Linq;
@@ -8,8 +9,8 @@ public class App : MonoBehaviour {
         print("START");
         StartCoroutine(UpdateWeb());
     }
-    private GameObject[] ens = new GameObject[0];
-    public GameObject prefab;
+    private Dictionary<int,GameObject> ens = new Dictionary<int,GameObject>();
+    public GameObject[] prefabs;
     public float scale = 10f;
     private IEnumerator UpdateWeb(){
         while(enabled){
@@ -20,29 +21,33 @@ public class App : MonoBehaviour {
                 continue;
             }
             var jObject = JObject.Parse(rq.downloadHandler.text);
-            int count = (int)jObject["EntityCount"];
-            if(ens.Length != count){
-                foreach(var e in ens){
-                    Destroy(e);
-                }
-                ens = new GameObject[count];                
-            }
-            int i = 0;
-            foreach(var j in jObject["Entities"]){
+            foreach(var l in (JObject)jObject["Entities"]){
+                int key = int.Parse(l.Key);
+                JObject j = (JObject)l.Value;
                 float x = (float) j["Pos"]["X"];
                 float y = (float) j["Pos"]["Y"];
                 float z = (float) j["Pos"]["Z"];
                 Vector3 pos = new Vector3(x,z,y);
                 pos *= scale;
-                if(ens[i] == null){
-                    ens[i] = Instantiate(prefab,pos,Quaternion.identity);
-                    ens[i].name = (string)j["Id"];
+                int id = (int) j["Id"];  
+                GameObject en;
+                if(id >= 0){
+                    int typ = (int) j["Type"];
+                    if(!ens.TryGetValue(id,out en)){                    
+                        en = Instantiate(prefabs[typ],pos,Quaternion.identity);
+                        en.name = (string)j["Id"];
+                        ens[id] = en;
+                    }
+                    en.transform.position = pos;
+                    // foreach(var n in j["Neighbors"]){  
+                    //     Debug.DrawLine(pos,ens[(int)n].transform.position,Color.red,0.5f);
+                    // }
+                }else{
+                    if(ens.TryGetValue(id,out en)){                    
+                        Destroy(en);
+                        ens.Remove(id);
+                    }
                 }
-                ens[i].transform.position = pos;
-                foreach(var n in j["Neighbors"]){  
-                    Debug.DrawLine(pos,ens[(int)n].transform.position,Color.red,0.5f);
-                }
-                i++;
             }
             yield return new WaitForEndOfFrame();
         }
